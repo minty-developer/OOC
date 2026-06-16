@@ -1,7 +1,8 @@
 import express from 'express';
 import cors from 'cors';
+import sqlite3 from 'sqlite3';
+import { open } from 'sqlite';
 import dotenv from 'dotenv';
-import mysql from 'mysql2/promise'; // 비동기(Promise) 버전 사용
 import { fileURLToPath } from 'url';
 import * as paths from 'path';
 
@@ -15,15 +16,9 @@ const PORT = process.env.PORT || 3000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = paths.dirname(__filename);
 
-// 커넥션 풀 생성 (연결 효율 극대화)
-const pool = mysql.createPool({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
+const dbPromise = open({
+    filename: paths.join(__dirname, 'openings.db'),
+    driver: sqlite3.Database
 });
 
 // 미들웨어 설정
