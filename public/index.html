@@ -202,7 +202,7 @@
 
             <aside>
                 <div class="card" style="margin-bottom:12px">
-                    <div class="muted">데이터베이스 연동</div>
+                    <div class="muted">데이터베이스 연동 (1분 이상 걸릴 수 있음)</div>
                     <button id="apiSyncBtn" style="margin-top:8px; background:#4ade80; color:#064e3b; width:100%;">서버에서
                         불러오는 중...</button>
                 </div>
@@ -239,7 +239,7 @@
 
 
         // ------------------------ 서버 API 연동 ------------------------
-        const API_URL = 'http://localhost:3000/api/openings';
+        const API_URL = 'https://ooc-epvp.onrender.com';
         const apiSyncBtn = document.getElementById('apiSyncBtn');
 
         async function fetchFromDatabase() {
