@@ -48,12 +48,6 @@ app.get('/api/openings', async (req, res, next) => {
     }
 });
 
-// 404 에러 처리 미들웨어
-app.use((req, res, next) => {
-    res.status(400);
-    res.sendFile(paths.join(__dirname, "./index.html"));
-});
-
 // 중앙 에러 처리 미들웨어
 app.use((err, req, res, next) => {
     console.error("🚨 서버 에러 발생:", err.stack);
