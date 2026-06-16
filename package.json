@@ -1,0 +1,28 @@
+{
+  "name": "ooc",
+  "version": "1.0.0",
+  "description": "Opnings Of Chess",
+  "homepage": "https://github.com/minty-developer/OOC#readme",
+  "bugs": {
+    "url": "https://github.com/minty-developer/OOC/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/minty-developer/OOC.git"
+  },
+  "license": "ISC",
+  "author": "Minty, LJM",
+  "type": "module",
+  "main": "server.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "nodemon server.js",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "node": "^26.3.0"
+  }
+}
