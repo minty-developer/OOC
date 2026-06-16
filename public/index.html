@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="ko">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>체스 오프닝 판별기 — 데스크톱 클라이언트</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
+
+    <style>
+        :root {
+            --bg: #0b1220;
+            --card: #071024;
+            --muted: #9aa4b2;
+            --accent: #60a5fa
+        }
+
+        body {
+            font-family: Inter, "Noto Sans KR", sans-serif;
+            background: linear-gradient(180deg, #051221, #071024);
+            color: #e6eef6;
+            margin: 0;
+            padding: 28px;
+            min-height: 100vh
+        }
+
+        .wrap {
+            max-width: 1100px;
+            margin: 0 auto
+        }
+
+        h1 {
+            margin: 0 0 6px;
+            font-size: 20px
+        }
+
+        p.lead {
+            margin: 0 0 18px;
+            color: var(--muted)
+        }
+
+        .panel {
+            display: grid;
+            grid-template-columns: 1fr 360px;
+            gap: 16px
+        }
+
+        @media(max-width:920px) {
+            .panel {
+                grid-template-columns: 1fr
+            }
+        }
+
+        .card {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
+            padding: 14px;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(2, 6, 23, 0.6)
+        }
+
+        input,
+        button,
+        textarea {
+            font-family: inherit
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            background: transparent;
+            color: inherit;
+            box-sizing: border-box
+        }
+
+        button {
+            background: var(--accent);
+            border: none;
+            padding: 10px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            color: #04243a;
+            font-weight: 700;
+            transition: background 0.2s;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed
+        }
+
+        .muted {
+            color: var(--muted);
+            font-size: 13px
+        }
+
+        .moves {
+            font-family: monospace;
+            color: #cfe7ff
+        }
+
+        .opening-item {
+            padding: 8px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.02);
+            margin-bottom: 8px;
+            cursor: pointer
+        }
+
+        .opening-item:hover {
+            filter: brightness(1.05)
+        }
+
+        .chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px
+        }
+
+        .chip {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 6px 8px;
+            border-radius: 999px;
+            cursor: pointer;
+            font-size: 13px
+        }
+
+        footer {
+            margin-top: 12px;
+            color: var(--muted);
+            font-size: 13px
+        }
+
+        #variationList {
+            margin-top: 10px;
+            max-height: 150px;
+            overflow: auto
+        }
+
+        #opList {
+            max-height: 50vh;
+            overflow: auto;
+            margin-top: 10px
+        }
+
+        /* 체스판 다크 테마 느낌으로 살짝 테두리 조정 */
+        #board {
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto 20px;
+            border: 2px solid #333;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+        <header>
+            <h1>♟️ 체스 오프닝 판별기 — 데스크톱 클라이언트</h1>
+            <p class="lead">한 수씩 입력하면 자동으로 체스판이 업데이트되며 오프닝을 판별합니다.</p>
+        </header>
+
+        <main class="panel">
+            <section class="card">
+
+                <div id="board"></div>
+
+                <div style="margin-bottom:10px">
+                    <div class="muted">현재 누적 수열</div>
+                    <div id="history" class="moves" style="margin-top:8px">(아직 없음)</div>
+                </div>
+
+                <label class="muted">이번 수 입력 (SAN 표기)</label>
+                <div style="display:flex;gap:8px;margin-top:8px">
+                    <input id="moveInput" placeholder="예: e4, Nf3" />
+                    <button id="addBtn">수 추가</button>
+                </div>
+
+                <div style="display:flex;gap:8px;margin-top:10px">
+                    <button id="undoBtn" style="background:#ffb86b">한 수 되돌리기</button>
+                    <button id="resetBtn" style="background:#ef4444">초기화</button>
+                    <div style="flex:1"></div>
+                    <button id="suggestBtn" style="background:#60a5fa">추천 다음 수</button>
+                </div>
+
+                <div style="margin-top:14px" class="muted">판별 결과</div>
+                <div id="result"
+                    style="margin-top:8px;padding:10px;border-radius:8px;background:rgba(255,255,255,0.02)">
+                    <div class="muted">아직 판별되지 않았습니다.</div>
+                </div>
+
+                <div style="margin-top:14px" class="muted">근접 바리에이션</div>
+                <div id="variationList" class="chips"></div>
+
+                <div style="margin-top:14px" class="muted">빠른 샘플</div>
+                <div id="quickList" class="chips" style="margin-top:6px"></div>
+            </section>
+
+            <aside>
+                <div class="card" style="margin-bottom:12px">
+                    <div class="muted">데이터베이스 연동</div>
+                    <button id="apiSyncBtn" style="margin-top:8px; background:#4ade80; color:#064e3b; width:100%;">서버에서
+                        불러오는 중...</button>
+                </div>
+
+                <div class="card" style="margin-bottom:12px">
+                    <div class="muted">수동 로컬 TSV 파일 불러오기 (서버 장애시)</div>
+                    <input type="file" id="tsvInput" multiple accept=".tsv" style="margin-top:8px" />
+                </div>
+
+                <div class="card">
+                    <div class="muted">전체 오프닝 목록 (클릭하면 수열 적용)</div>
+                    <div id="opList"></div>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+
+    <script>
+        // ------------------------ 체스 게임 및 보드 초기화 ------------------------
+        let game = new Chess(); // 체스 룰/로직 검증용
+        let board = null; // 화면 UI용
+
+        // 체스판 설정
+        const boardConfig = {
+            position: 'start', // 시작 포지션
+            pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png', // 기물 이미지 경로
+            showNotation: true
+        };
+        board = Chessboard('board', boardConfig);
+
+
+        // ------------------------ 서버 API 연동 ------------------------
+        const API_URL = 'http://localhost:3000/api/openings';
+        const apiSyncBtn = document.getElementById('apiSyncBtn');
+
+        async function fetchFromDatabase() {
+            try {
+                apiSyncBtn.textContent = '⏳ 서버 연결 중...';
+                apiSyncBtn.disabled = true;
+
+                const response = await fetch(API_URL);
+                if (!response.ok) throw new Error('서버 응답 오류');
+
+                const data = await response.json();
+                ECO = [];
+
+                data.forEach(row => {
+                    const moves = [];
+                    if (row.moves) {
+                        row.moves.split(/\d+\.\s?/).forEach(seg => {
+                            const ms = seg.trim().split(/\s+/);
+                            moves.push(...ms.filter(m => m));
+                        });
+                    }
+                    ECO.push({ eco: row.eco, name: row.name, moves });
+                });
+
+                apiSyncBtn.style.background = '#4ade80';
+                apiSyncBtn.textContent = `✅ DB 동기화 완료 (${ECO.length}개)`;
+                render();
+            } catch (error) {
+                console.error('API 연동 실패:', error);
+                apiSyncBtn.style.background = '#ef4444';
+                apiSyncBtn.style.color = '#fff';
+                apiSyncBtn.textContent = '❌ 서버 연결 실패 (클릭하여 재시도)';
+                apiSyncBtn.disabled = false;
+            }
+        }
+        apiSyncBtn.addEventListener('click', fetchFromDatabase);
+        window.addEventListener('DOMContentLoaded', fetchFromDatabase);
+
+        // ------------------------ TSV 파싱 (백업용) ------------------------
+        function parseTSV(text) {
+            const lines = text.split(/\r?\n/).filter(l => l.trim());
+            const ops = [];
+            if (lines[0].toLowerCase().startsWith('eco')) lines.shift();
+            for (const line of lines) {
+                const parts = line.split(/\t/);
+                if (parts.length < 3) continue;
+                const eco = parts[0].trim();
+                const name = parts[1].trim();
+                const pgn = parts[2].trim();
+                const moves = [];
+                pgn.split(/\d+\.\s?/).forEach(seg => {
+                    const ms = seg.trim().split(/\s+/);
+                    moves.push(...ms.filter(m => m));
+                });
+                ops.push({ eco, name, moves });
+            }
+            return ops;
+        }
+
+        // ------------------------ 유틸 ------------------------
+        function sanitizeMove(m) { return m ? m.replace(/[+#?!]/g, '').trim() : ""; }
+        function detectOpening(history) {
+            if (!history.length) return null;
+            let best = null;
+            for (const op of ECO) {
+                const seq = op.moves;
+                if (seq.length > history.length) continue;
+                let ok = true;
+                for (let i = 0; i < seq.length; i++) { if (seq[i] !== history[i]) { ok = false; break; } }
+                if (ok) { if (!best || seq.length > best.moves.length) best = op; }
+            }
+            return best;
+        }
+        function suggestNextMoves(history) {
+            const candidates = {};
+            for (const op of ECO) {
+                const seq = op.moves;
+                let matchLen = 0;
+                for (let i = 0; i < history.length && i < seq.length; i++) { if (history[i] !== seq[i]) break; matchLen++; }
+                if (matchLen === history.length && seq.length > history.length) {
+                    const next = seq[history.length];
+                    candidates[next] = (candidates[next] || 0) + 1;
+                }
+            }
+            return Object.keys(candidates).sort((a, b) => candidates[b] - candidates[a]);
+        }
+        function findVariations(history) {
+            const vars = [];
+            for (const op of ECO) {
+                let match = true;
+                for (let i = 0; i < history.length; i++) { if (history[i] !== op.moves[i]) { match = false; break; } }
+                if (match && op.moves.length > history.length) vars.push(op);
+            }
+            return vars;
+        }
+
+        // ------------------------ UI 렌더링 ------------------------
+        let ECO = [], history = [];
+
+        const historyEl = document.getElementById('history');
+        const resultEl = document.getElementById('result');
+        const variationEl = document.getElementById('variationList');
+        const moveInput = document.getElementById('moveInput');
+        const addBtn = document.getElementById('addBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const undoBtn = document.getElementById('undoBtn');
+        const suggestBtn = document.getElementById('suggestBtn');
+        const tsvInput = document.getElementById('tsvInput');
+        const quickListEl = document.getElementById('quickList');
+        const opListEl = document.getElementById('opList');
+
+        function render() {
+            historyEl.textContent = history.length ? history.join(' ') : '(아직 없음)';
+
+            // 보드 초기화
+            game.reset();
+
+            // history 배열을 순회하며 게임 상태 재구성
+            for (const move of history) {
+                game.move(move);
+            }
+
+            // 보드 위치 갱신
+            board.position(game.fen());
+            historyEl.textContent = history.length ? history.join(' ') : '(아직 없음)';
+
+            // 🌟 [추가된 로직] 체스판 업데이트 🌟
+            game.reset(); // 보드 로직 초기화
+            let isInvalidMove = false;
+
+            for (const move of history) {
+                const result = game.move(move); // SAN 표기를 FEN으로 계산
+                if (result === null) {
+                    isInvalidMove = true;
+                    break; // 유효하지 않은 수면 중단
+                }
+            }
+
+            // FEN 코드를 가져와 UI에 반영
+            board.position(game.fen(), true);
+
+            if (isInvalidMove) {
+                resultEl.innerHTML = `<div style="color:#ef4444">⚠️ 잘못된 체스 수입니다. (기물이 움직일 수 없는 위치)</div>`;
+                return;
+            }
+
+            const match = detectOpening(history);
+            if (match) {
+                resultEl.innerHTML = `<div><strong>${match.name}</strong> <span class="muted">(${match.eco})</span></div>
+                        <div class="moves" style="margin-top:6px">매칭된 수: ${match.moves.join(' ')}</div>`;
+            } else {
+                resultEl.innerHTML = `<div class="muted">매칭되는 오프닝이 없습니다.</div>`;
+            }
+
+            const vars = findVariations(history);
+            variationEl.innerHTML = '';
+            vars.forEach(v => {
+                const d = document.createElement('div');
+                d.className = 'chip';
+                d.textContent = `${v.name} (${v.eco})`;
+                d.onclick = () => { history = [...v.moves]; render(); };
+                variationEl.appendChild(d);
+            });
+
+            opListEl.innerHTML = '';
+            const renderLimit = Math.min(ECO.length, 1000);
+            for (let i = 0; i < renderLimit; i++) {
+                const op = ECO[i];
+                const d = document.createElement('div');
+                d.className = 'opening-item';
+                d.innerHTML = `<div><strong>${op.name}</strong> <span class="muted">(${op.eco})</span></div>
+                 <div class="muted moves" style="margin-top:6px">${op.moves.join(' ')}</div>`;
+                d.onclick = () => { history = [...op.moves]; render(); };
+                opListEl.appendChild(d);
+            }
+        }
+
+        // 빠른 샘플 (폴레리오 디펜스 등 추가 가능)
+        const QUICK = [
+            { label: "Polerio Defense (e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5 d5 exd5 Na5)", moves: ["e4", "e5", "Nf3", "Nc6", "Bc4", "Nf6", "Ng5", "d5", "exd5", "Na5"] },
+            { label: "Ruy Lopez (e4 e5 Nf3 Nc6 Bb5)", moves: ["e4", "e5", "Nf3", "Nc6", "Bb5"] },
+            { label: "Italian (e4 e5 Nf3 Nc6 Bc4)", moves: ["e4", "e5", "Nf3", "Nc6", "Bc4"] },
+            { label: "Sicilian (e4 c5)", moves: ["e4", "c5"] }
+        ];
+        function initQuick() {
+            quickListEl.innerHTML = '';
+            QUICK.forEach(q => {
+                const d = document.createElement('div');
+                d.className = 'chip';
+                d.textContent = q.label;
+                d.onclick = () => { history = [...q.moves]; render(); };
+                quickListEl.appendChild(d);
+            });
+        }
+        initQuick();
+
+        // 버튼
+        addBtn.onclick = () => {
+            const v = sanitizeMove(moveInput.value);
+            if (!v) return;
+
+            // 1. 임시로 게임 상태 복사해서 검증
+            const tempGame = new Chess();
+            for (const move of history) tempGame.move(move);
+
+            // 2. 입력한 수가 유효한지 확인
+            if (tempGame.move(v) === null) {
+                alert("⚠️ 유효하지 않은 체스 수입니다!");
+                moveInput.value = ''; // 잘못된 입력 초기화
+                return;
+            }
+
+            // 3. 유효할 때만 히스토리에 추가
+            history.push(v);
+            moveInput.value = '';
+            render();
+        };
+        undoBtn.onclick = () => { history.pop(); render(); };
+        resetBtn.onclick = () => { history = []; render(); };
+        suggestBtn.onclick = () => { const s = suggestNextMoves(history); if (!s.length) alert('추천 수 없음'); else alert('추천 다음 수: ' + s.join(', ')); };
+
+        // TSV 로드
+        tsvInput.addEventListener('change', async e => {
+            ECO = [];
+            const files = Array.from(e.target.files);
+            for (const f of files) {
+                const text = await f.text();
+                ECO.push(...parseTSV(text));
+            }
+            apiSyncBtn.style.background = '#eab308';
+            apiSyncBtn.textContent = `📁 로컬 파일 사용 (${ECO.length}개)`;
+            render();
+        });
+
+        moveInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') addBtn.click(); });
+
+        // 브라우저 리사이징 시 보드 크기 맞춤 처리
+        window.addEventListener('resize', () => { board.resize(); });
+    </script>
+</body>
+
+</html>
