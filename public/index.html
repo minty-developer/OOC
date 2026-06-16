@@ -220,9 +220,9 @@
         </main>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+    <script src="./jquery-3.6.0.min.js"></script>
+    <script src="./chessboard-1.0.0.min.js"></script>
+    <script src="./chess.min.js"></script>
 
     <script>
         // ------------------------ 체스 게임 및 보드 초기화 ------------------------
@@ -239,7 +239,7 @@
 
 
         // ------------------------ 서버 API 연동 ------------------------
-        const API_URL = 'https://ooc-epvp.onrender.com';
+        const API_URL = 'https://ooc-epvp.onrender.com/api/openings';
         const apiSyncBtn = document.getElementById('apiSyncBtn');
 
         async function fetchFromDatabase() {

@@ -30,6 +30,7 @@ const pool = mysql.createPool({
 app.use(cors()); // 테스트 및 개발 단계를 위해 모든 도메인 허용
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.get('/favicon.ico', () => res.status(204).json({ "message": "No Content" }))
 
 /**
  * [GET] 체스 오프닝 북 데이터 조회 API
