@@ -34,9 +34,7 @@ app.get('/favicon.ico', () => res.status(204).json({ "message": "No Content" }))
 app.get('/api/openings', async (req, res, next) => {
     try {
         // DB에서 오프닝 목록 쿼리 실행
-        const [rows] = await pool.query('SELECT name, eco, moves FROM openings ORDER BY id DESC');
-
-        // 프론트엔드로 JSON 배열 반환
+        const rows = db.prepare('SELECT * FROM openings').all();
         res.json(rows);
     } catch (error) {
         // 에러 발생 시 중앙 에러 처리 미들웨어로 던지기
