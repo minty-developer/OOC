@@ -9,6 +9,9 @@
     - 체스의 모든 오프닝을 담기
 - 대상
     - 체스 입문자
+ 
+## How To Run?
+[바로가기](https://minty-developer.github.io/OOC)
 
 ## Stack
 - FrontEnd
